@@ -2,9 +2,7 @@ pub mod buffer;
 pub mod program;
 pub mod shader;
 
-use web_sys::{WebGl2RenderingContext};
-
-const ZERO_HEIGHT: f32 = 0.0;
+use web_sys::WebGl2RenderingContext;
 
 pub fn draw(context: &WebGl2RenderingContext, vert_count: i32) {
     context.draw_arrays(WebGl2RenderingContext::TRIANGLES, 0, vert_count);

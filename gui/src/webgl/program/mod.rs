@@ -6,7 +6,6 @@ pub fn get_program(context: &WebGl2RenderingContext) -> WebGlProgram {
     let (vert_shader, frag_shader) = get_shaders(&context);
 
     let program = link_program(&context, &vert_shader, &frag_shader).unwrap();
-    context.use_program(Some(&program));
 
     return program;
 }
