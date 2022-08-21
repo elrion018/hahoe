@@ -1,42 +1,10 @@
 use std::rc::Rc;
-
 use web_sys::{WebGl2RenderingContext, WebGlProgram, WebGlShader};
 
+use super::shader::get_shaders;
+
 pub fn get_program(context: &WebGl2RenderingContext) -> Rc<WebGlProgram> {
-    let vert_shader = crate::webgl::shader::compile_shader(
-        &context,
-        WebGl2RenderingContext::VERTEX_SHADER,
-        r##"#version 300 es
-        in vec4 a_position;
-        in vec4 a_color;
-
-        uniform mat4 u_matrix;
-
-        out vec4 v_color;
-
-        void main() {
-          gl_Position = u_matrix * a_position;
-          v_color = a_color;
-        }
-        "##,
-    )
-    .unwrap();
-
-    let frag_shader = crate::webgl::shader::compile_shader(
-        &context,
-        WebGl2RenderingContext::FRAGMENT_SHADER,
-        r##"#version 300 es
-        precision highp float;
-
-        in vec4 v_color;
-
-        out vec4 outColor;
-        void main() {
-          outColor = v_color;
-        }
-        "##,
-    )
-    .unwrap();
+    let (vert_shader, frag_shader) = get_shaders(&context);
 
     let program = link_program(&context, &vert_shader, &frag_shader).unwrap();
     context.use_program(Some(&program));

@@ -1,6 +1,6 @@
 use web_sys::{WebGl2RenderingContext, WebGlShader};
 
-pub fn compile_shader(
+fn compile_shader(
     context: &WebGl2RenderingContext,
     shader_type: u32,
     source: &str,
@@ -22,4 +22,43 @@ pub fn compile_shader(
             .get_shader_info_log(&shader)
             .unwrap_or_else(|| String::from("Unknown error creating shader")))
     }
+}
+
+pub fn get_shaders(context: &WebGl2RenderingContext) -> (WebGlShader, WebGlShader) {
+    let vert_shader = compile_shader(
+        &context,
+        WebGl2RenderingContext::VERTEX_SHADER,
+        r##"#version 300 es
+        in vec4 a_position;
+        in vec4 a_color;
+
+        uniform mat4 u_matrix;
+
+        out vec4 v_color;
+
+        void main() {
+          gl_Position = u_matrix * a_position;
+          v_color = a_color;
+        }
+        "##,
+    )
+    .unwrap();
+
+    let frag_shader = compile_shader(
+        &context,
+        WebGl2RenderingContext::FRAGMENT_SHADER,
+        r##"#version 300 es
+        precision highp float;
+
+        in vec4 v_color;
+
+        out vec4 outColor;
+        void main() {
+          outColor = v_color;
+        }
+        "##,
+    )
+    .unwrap();
+
+    return (vert_shader, frag_shader);
 }
