@@ -1,21 +1,23 @@
-use std::rc::Rc;
-use web_sys::{WebGl2RenderingContext, WebGlProgram, WebGlShader};
+use web_sys::{WebGl2RenderingContext, WebGlProgram, WebGlShader, WebGlVertexArrayObject};
 
 use super::shader::get_shaders;
 
-pub fn get_program(context: &WebGl2RenderingContext) -> Rc<WebGlProgram> {
+pub fn get_program(context: &WebGl2RenderingContext) -> WebGlProgram {
     let (vert_shader, frag_shader) = get_shaders(&context);
 
     let program = link_program(&context, &vert_shader, &frag_shader).unwrap();
     context.use_program(Some(&program));
 
-    let vao = context
+    return program;
+}
+
+pub fn get_vertex_array_object(context: &WebGl2RenderingContext) -> WebGlVertexArrayObject {
+    let vertex_array_object = context
         .create_vertex_array()
         .ok_or("Could not create vertex array object")
         .unwrap();
-    context.bind_vertex_array(Some(&vao));
 
-    Rc::new(program)
+    return vertex_array_object;
 }
 
 fn link_program(
