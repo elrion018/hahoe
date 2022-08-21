@@ -107,7 +107,7 @@ fn set_rectangle(context: WebGl2RenderingContext, bitmap: &Vec<Vec<Pixel>>) {
 
         let vert_count = (vertices.len() / 3) as i32;
 
-        keep_repaint(context, vert_count);
+        keep_redraw(context, vert_count);
     }
 }
 
@@ -118,14 +118,15 @@ fn request_animation_frame(f: &Closure<dyn FnMut()>) -> () {
         .expect("should register `requestAnimationFrame` OK");
 }
 
-fn keep_repaint(context: WebGl2RenderingContext, vert_count: i32) -> () {
+fn keep_redraw(context: WebGl2RenderingContext, vert_count: i32) -> () {
     let f = Rc::new(RefCell::new(None));
     let g = Rc::clone(&f);
 
-    *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
-        draw(&context, vert_count);
+    let buffer_canvas = get_context(true);
 
+    *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
         request_animation_frame(f.borrow().as_ref().unwrap());
+        draw(&context, vert_count);
     }) as Box<dyn FnMut()>));
 
     request_animation_frame(g.borrow().as_ref().unwrap());
@@ -223,32 +224,26 @@ fn create_fragment_shader(context: &WebGl2RenderingContext) -> WebGlShader {
 
 #[wasm_bindgen]
 pub fn start() -> Result<(), JsValue> {
+    // view용 context를 가져오고 shader들을 생성한다.
     let context = get_context(false);
     let (vertex_shader, fragment_shader) = create_shaders(&context);
 
+    // 생성한 shader들로 program을 생성하고 이를 context가 사용하게끔 한다.
     let program = link_program(&context, &vertex_shader, &fragment_shader)?;
     context.use_program(Some(&program));
 
-    let color_attribute_location = context.get_attrib_location(&program, "a_color");
-    let position_attribute_location = context.get_attrib_location(&program, "position");
-
+    // vertex array object를 생성하고 이를 context에 bind한다.
     let vao = context
         .create_vertex_array()
         .ok_or("Could not create vertex array object")?;
     context.bind_vertex_array(Some(&vao));
 
-    // Note that `Float32Array::view` is somewhat dangerous (hence the
-    // `unsafe`!). This is creating a raw view into our module's
-    // `WebAssembly.Memory` buffer, but if we allocate more pages for ourself
-    // (aka do a memory allocation in Rust) it'll cause the buffer to change,
-    // causing the `Float32Array` to be invalid.
-    //
-    // As a result, after `Float32Array::view` we have to be very careful not to
-    // do any memory allocations before it's dropped.
-
-    //Set Color
+    // 컬러를 위한 버퍼를 생성하고 이를 context에 bind한다.
     let color_buffer = context.create_buffer().ok_or("Failed to create buffer")?;
     context.bind_buffer(WebGl2RenderingContext::ARRAY_BUFFER, Some(&color_buffer));
+
+    let color_attribute_location = context.get_attrib_location(&program, "a_color");
+    let position_attribute_location = context.get_attrib_location(&program, "position");
 
     let optbitmap = test_runner1();
     let bitmap = optbitmap.unwrap();
