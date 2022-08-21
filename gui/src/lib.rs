@@ -1,5 +1,6 @@
 pub mod basics;
 pub mod dom;
+pub mod utils;
 pub mod webgl;
 
 pub use basics::GuiBasics;
