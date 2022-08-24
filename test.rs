@@ -17,18 +17,6 @@ fn check_bitmap_is_empty(bitmap: &Vec<Vec<Pixel>>) -> bool {
     return false;
 }
 
-fn bind_array_buffer(context: &WebGl2RenderingContext, array_buffer: &Vec<f32>) -> () {
-    unsafe {
-        let array_buffer_view = js_sys::Float32Array::view(&array_buffer);
-
-        context.buffer_data_with_array_buffer_view(
-            WebGl2RenderingContext::ARRAY_BUFFER,
-            &array_buffer_view,
-            WebGl2RenderingContext::STATIC_DRAW,
-        );
-    }
-}
-
 pub fn set_color(context: &WebGl2RenderingContext, bitmap: &Vec<Vec<Pixel>>) {
     if check_bitmap_is_empty(bitmap) {
         return;
@@ -67,7 +55,27 @@ pub fn set_color(context: &WebGl2RenderingContext, bitmap: &Vec<Vec<Pixel>>) {
         }
     }
 
-    bind_array_buffer(context, &color);
+    unsafe {
+        let color_array_buf_view = js_sys::Float32Array::view(&color);
+
+        context.buffer_data_with_array_buffer_view(
+            WebGl2RenderingContext::ARRAY_BUFFER,
+            &color_array_buf_view,
+            WebGl2RenderingContext::STATIC_DRAW,
+        );
+    }
+}
+
+fn bind_array_buffer(context: &WebGl2RenderingContext, array_buffer: Vec<f32>) -> () {
+    unsafe {
+        let array_buffer_view = js_sys::Float32Array::view(&array_buffer);
+
+        context.buffer_data_with_array_buffer_view(
+            WebGl2RenderingContext::ARRAY_BUFFER,
+            &array_buffer_view,
+            WebGl2RenderingContext::STATIC_DRAW,
+        );
+    }
 }
 
 pub fn set_rectangle(
@@ -172,29 +180,18 @@ pub fn set_rectangle(
         (&rotate_x * &rotate_y * &rotate_z * &default).as_slice(),
     );
 
-    for x in 0..width {
-        for y in 0..height {
-            let x1 = start_width_ratio + x as f32 * width_ratio;
-            let x2 = start_width_ratio + (x + 1) as f32 * width_ratio;
-            let y1 = start_height_ratio + y as f32 * height_ratio;
-            let y2 = start_height_ratio + (y + 1) as f32 * height_ratio;
-            vertices.append(&mut make_triangle_position(
-                x1,
-                x2,
-                y1,
-                y2,
-                bitmap[x][y].height as f32,
-                bitmap[x + 1][y].height as f32,
-                bitmap[x][y + 1].height as f32,
-                bitmap[x + 1][y + 1].height as f32,
-            ));
-        }
+    unsafe {
+        let positions_array_buf_view = js_sys::Float32Array::view(&vertices);
+
+        context.buffer_data_with_array_buffer_view(
+            WebGl2RenderingContext::ARRAY_BUFFER,
+            &positions_array_buf_view,
+            WebGl2RenderingContext::STATIC_DRAW,
+        );
+
+        let vert_count = (vertices.len() / 3) as i32;
+        crate::webgl::draw(&context, vert_count);
     }
-
-    bind_array_buffer(context, &vertices);
-
-    let vert_count = (vertices.len() / 3) as i32;
-    crate::webgl::draw(&context, vert_count);
 }
 
 fn make_triangle_position(

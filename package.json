@@ -6,8 +6,8 @@
   "author": "ytw0728 <ytw0728@gmail.com>",
   "license": "ISC",
   "scripts": {
-    "dev": "yarn exec run-p -- -nl \"serve:web\" \"watch:wasm\"",
-    "serve:web": "yarn exec wait-on dist-wasm && webpack serve --mode=development",
+    "dev": "run-p -- -nl \"serve:web\" \"watch:wasm\"",
+    "serve:web": "wait-on dist-wasm && webpack serve --mode=development",
     "watch:wasm": "cargo watch -- yarn build:wasm",
     "build:web": "yarn build:wasm && webpack --mode=production --node-env=production",
     "build:wasm": "wasm-pack build core --out-dir ../dist-wasm",
