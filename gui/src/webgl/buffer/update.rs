@@ -5,7 +5,7 @@ use web_sys::{HtmlInputElement, WebGl2RenderingContext, WebGlProgram};
 
 use crate::utils::get_head;
 
-fn get_buffer_array<T>(width: usize, height: usize, size: usize) -> Vec<T> {
+fn get_array_buffer<T>(width: usize, height: usize, size: usize) -> Vec<T> {
     return Vec::<T>::with_capacity(width * height * size);
 }
 
@@ -29,57 +29,54 @@ fn bind_array_buffer(context: &WebGl2RenderingContext, array_buffer: &Vec<f32>) 
     }
 }
 
-pub fn set_color(context: &WebGl2RenderingContext, bitmap: &Vec<Vec<Pixel>>) {
-    if check_bitmap_is_empty(bitmap) {
-        return;
-    }
-
+fn get_filled_color_array_buffer(bitmap: &Vec<Vec<Pixel>>) -> Vec<f32> {
     let width = bitmap.len() - 1;
     let height = get_head(bitmap).unwrap().len() - 1;
-    let mut color = get_buffer_array(width, height, 24);
+    let mut color_array_buffer = get_array_buffer(width, height, 24);
 
     for x in 0..width {
         for y in 0..height {
-            color.push(0.2f32);
-            color.push(bitmap[x][y].height as f32);
-            color.push(0.2f32);
-            color.push(1.0f32);
-            color.push(0.2f32);
-            color.push(bitmap[x + 1][y].height as f32);
-            color.push(0.2f32);
-            color.push(1.0f32);
-            color.push(0.2f32);
-            color.push(bitmap[x][y + 1].height as f32);
-            color.push(0.2f32);
-            color.push(1.0f32);
-            color.push(0.2f32);
-            color.push(bitmap[x][y + 1].height as f32);
-            color.push(0.2f32);
-            color.push(1.0f32);
-            color.push(0.2f32);
-            color.push(bitmap[x + 1][y].height as f32);
-            color.push(0.2f32);
-            color.push(1.0f32);
-            color.push(0.2f32);
-            color.push(bitmap[x + 1][y + 1].height as f32);
-            color.push(0.2f32);
-            color.push(1.0f32);
+            color_array_buffer.push(0.2f32);
+            color_array_buffer.push(bitmap[x][y].height as f32);
+            color_array_buffer.push(0.2f32);
+            color_array_buffer.push(1.0f32);
+            color_array_buffer.push(0.2f32);
+            color_array_buffer.push(bitmap[x + 1][y].height as f32);
+            color_array_buffer.push(0.2f32);
+            color_array_buffer.push(1.0f32);
+            color_array_buffer.push(0.2f32);
+            color_array_buffer.push(bitmap[x][y + 1].height as f32);
+            color_array_buffer.push(0.2f32);
+            color_array_buffer.push(1.0f32);
+            color_array_buffer.push(0.2f32);
+            color_array_buffer.push(bitmap[x][y + 1].height as f32);
+            color_array_buffer.push(0.2f32);
+            color_array_buffer.push(1.0f32);
+            color_array_buffer.push(0.2f32);
+            color_array_buffer.push(bitmap[x + 1][y].height as f32);
+            color_array_buffer.push(0.2f32);
+            color_array_buffer.push(1.0f32);
+            color_array_buffer.push(0.2f32);
+            color_array_buffer.push(bitmap[x + 1][y + 1].height as f32);
+            color_array_buffer.push(0.2f32);
+            color_array_buffer.push(1.0f32);
         }
     }
 
-    bind_array_buffer(context, &color);
+    return color_array_buffer;
 }
 
-pub fn set_rectangle(
-    context: &WebGl2RenderingContext,
-    bitmap: &Vec<Vec<Pixel>>,
-    program: &WebGlProgram,
-    camera_rad_inputs: &[HtmlInputElement; 4],
-) {
+pub fn update_color(context: &WebGl2RenderingContext, bitmap: &Vec<Vec<Pixel>>) {
     if check_bitmap_is_empty(bitmap) {
         return;
     }
 
+    let color_array_buffer = get_filled_color_array_buffer(bitmap);
+
+    bind_array_buffer(context, &color_array_buffer);
+}
+
+fn get_filled_rectangle_array_buffer(bitmap: &Vec<Vec<Pixel>>) -> Vec<f32> {
     let width = bitmap.len() - 1;
     let height = get_head(bitmap).unwrap().len() - 1;
 
@@ -89,8 +86,36 @@ pub fn set_rectangle(
     let start_width_ratio = -1.;
     let start_height_ratio = -1.;
 
-    let mut vertices = get_buffer_array(width, height, 24);
+    let mut rectangle_array_buffer = get_array_buffer(width, height, 24);
 
+    for x in 0..width {
+        for y in 0..height {
+            let x1 = start_width_ratio + x as f32 * width_ratio;
+            let x2 = start_width_ratio + (x + 1) as f32 * width_ratio;
+            let y1 = start_height_ratio + y as f32 * height_ratio;
+            let y2 = start_height_ratio + (y + 1) as f32 * height_ratio;
+
+            rectangle_array_buffer.append(&mut make_triangle_position(
+                x1,
+                x2,
+                y1,
+                y2,
+                bitmap[x][y].height as f32,
+                bitmap[x + 1][y].height as f32,
+                bitmap[x][y + 1].height as f32,
+                bitmap[x + 1][y + 1].height as f32,
+            ));
+        }
+    }
+
+    return rectangle_array_buffer;
+}
+
+fn set_uniform_matrix(
+    context: &WebGl2RenderingContext,
+    program: &WebGlProgram,
+    camera_rad_inputs: &[HtmlInputElement; 4],
+) {
     let camera_rads = camera_rad_inputs.clone().map(|node| {
         let value = node.value();
         match value.parse::<f32>() {
@@ -171,29 +196,24 @@ pub fn set_rectangle(
         false,
         (&rotate_x * &rotate_y * &rotate_z * &default).as_slice(),
     );
+}
 
-    for x in 0..width {
-        for y in 0..height {
-            let x1 = start_width_ratio + x as f32 * width_ratio;
-            let x2 = start_width_ratio + (x + 1) as f32 * width_ratio;
-            let y1 = start_height_ratio + y as f32 * height_ratio;
-            let y2 = start_height_ratio + (y + 1) as f32 * height_ratio;
-            vertices.append(&mut make_triangle_position(
-                x1,
-                x2,
-                y1,
-                y2,
-                bitmap[x][y].height as f32,
-                bitmap[x + 1][y].height as f32,
-                bitmap[x][y + 1].height as f32,
-                bitmap[x + 1][y + 1].height as f32,
-            ));
-        }
+pub fn update_rectangle(
+    context: &WebGl2RenderingContext,
+    bitmap: &Vec<Vec<Pixel>>,
+    program: &WebGlProgram,
+    camera_rad_inputs: &[HtmlInputElement; 4],
+) {
+    if check_bitmap_is_empty(bitmap) {
+        return;
     }
 
-    bind_array_buffer(context, &vertices);
+    let rectangle_array_buffer = get_filled_rectangle_array_buffer(bitmap);
 
-    let vert_count = (vertices.len() / 3) as i32;
+    set_uniform_matrix(context, program, camera_rad_inputs);
+    bind_array_buffer(context, &rectangle_array_buffer);
+
+    let vert_count = (rectangle_array_buffer.len() / 3) as i32;
     crate::webgl::draw(&context, vert_count);
 }
 
