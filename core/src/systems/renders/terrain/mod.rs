@@ -31,7 +31,7 @@ impl<'a> System<'a> for RenderTerrainSystem {
 
             gui::webgl::buffer::init::bind_vertex_buffer(context, program);
             let rectangle_array_buffer =
-                gui::webgl::buffer::update::get_rectangle_array_buffer(&terrain.bitmap);
+                gui::webgl::buffer::update::get_rectangle_buffer_data(&terrain.bitmap);
             gui::webgl::buffer::update::fill_buffer_data(context, &rectangle_array_buffer);
 
             gui::webgl::buffer::update::set_uniform_matrix(context, program, ranges);

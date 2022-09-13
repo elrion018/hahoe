@@ -46,7 +46,7 @@ pub fn get_color_buffer_data(bitmap: &Vec<Vec<Pixel>>) -> Vec<f32> {
     return color_array_buffer;
 }
 
-pub fn get_rectangle_array_buffer(bitmap: &Vec<Vec<Pixel>>) -> Vec<f32> {
+pub fn get_rectangle_buffer_data(bitmap: &Vec<Vec<Pixel>>) -> Vec<f32> {
     let width = bitmap.len() - 1;
     let height = get_head(bitmap).unwrap().len() - 1;
 
