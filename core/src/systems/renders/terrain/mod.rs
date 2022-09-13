@@ -23,10 +23,19 @@ impl<'a> System<'a> for RenderTerrainSystem {
                 ranges,
                 context,
             } = self.basics.as_ref();
+
             gui::webgl::buffer::init::bind_color_buffer(context, program);
-            gui::webgl::buffer::update::update_color(context, &terrain.bitmap);
+            let color_buffer_data =
+                gui::webgl::buffer::update::get_color_buffer_data(&terrain.bitmap);
+            gui::webgl::buffer::update::fill_buffer_data(context, &color_buffer_data);
+
             gui::webgl::buffer::init::bind_vertex_buffer(context, program);
-            gui::webgl::buffer::update::update_rectangle(context, &terrain.bitmap, program, ranges);
+            let rectangle_array_buffer =
+                gui::webgl::buffer::update::get_rectangle_array_buffer(&terrain.bitmap);
+            gui::webgl::buffer::update::fill_buffer_data(context, &rectangle_array_buffer);
+
+            gui::webgl::buffer::update::set_uniform_matrix(context, program, ranges);
+            gui::webgl::draw(context, (rectangle_array_buffer.len() / 3) as i32);
         }
     }
 }

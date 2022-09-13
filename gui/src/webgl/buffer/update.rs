@@ -9,27 +9,7 @@ fn get_array_buffer<T>(width: usize, height: usize, size: usize) -> Vec<T> {
     return Vec::<T>::with_capacity(width * height * size);
 }
 
-fn check_bitmap_is_empty(bitmap: &Vec<Vec<Pixel>>) -> bool {
-    if bitmap.is_empty() || get_head(bitmap).unwrap().is_empty() {
-        return true;
-    }
-
-    return false;
-}
-
-fn bind_array_buffer(context: &WebGl2RenderingContext, array_buffer: &Vec<f32>) -> () {
-    unsafe {
-        let array_buffer_view = js_sys::Float32Array::view(&array_buffer);
-
-        context.buffer_data_with_array_buffer_view(
-            WebGl2RenderingContext::ARRAY_BUFFER,
-            &array_buffer_view,
-            WebGl2RenderingContext::STATIC_DRAW,
-        );
-    }
-}
-
-fn get_filled_color_array_buffer(bitmap: &Vec<Vec<Pixel>>) -> Vec<f32> {
+pub fn get_color_buffer_data(bitmap: &Vec<Vec<Pixel>>) -> Vec<f32> {
     let width = bitmap.len() - 1;
     let height = get_head(bitmap).unwrap().len() - 1;
     let mut color_array_buffer = get_array_buffer(width, height, 24);
@@ -66,17 +46,7 @@ fn get_filled_color_array_buffer(bitmap: &Vec<Vec<Pixel>>) -> Vec<f32> {
     return color_array_buffer;
 }
 
-pub fn update_color(context: &WebGl2RenderingContext, bitmap: &Vec<Vec<Pixel>>) {
-    if check_bitmap_is_empty(bitmap) {
-        return;
-    }
-
-    let color_array_buffer = get_filled_color_array_buffer(bitmap);
-
-    bind_array_buffer(context, &color_array_buffer);
-}
-
-fn get_filled_rectangle_array_buffer(bitmap: &Vec<Vec<Pixel>>) -> Vec<f32> {
+pub fn get_rectangle_array_buffer(bitmap: &Vec<Vec<Pixel>>) -> Vec<f32> {
     let width = bitmap.len() - 1;
     let height = get_head(bitmap).unwrap().len() - 1;
 
@@ -111,7 +81,46 @@ fn get_filled_rectangle_array_buffer(bitmap: &Vec<Vec<Pixel>>) -> Vec<f32> {
     return rectangle_array_buffer;
 }
 
-fn set_uniform_matrix(
+fn check_bitmap_is_empty(bitmap: &Vec<Vec<Pixel>>) -> bool {
+    if bitmap.is_empty() || get_head(bitmap).unwrap().is_empty() {
+        return true;
+    }
+
+    return false;
+}
+
+pub fn fill_buffer_data(context: &WebGl2RenderingContext, array_buffer: &Vec<f32>) -> () {
+    unsafe {
+        let array_buffer_view = js_sys::Float32Array::view(&array_buffer);
+
+        context.buffer_data_with_array_buffer_view(
+            WebGl2RenderingContext::ARRAY_BUFFER,
+            &array_buffer_view,
+            WebGl2RenderingContext::STATIC_DRAW,
+        );
+    }
+}
+
+pub fn update_rectangle(
+    context: &WebGl2RenderingContext,
+    bitmap: &Vec<Vec<Pixel>>,
+    program: &WebGlProgram,
+    camera_rad_inputs: &[HtmlInputElement; 4],
+) {
+    if check_bitmap_is_empty(bitmap) {
+        return;
+    }
+
+    let rectangle_array_buffer = get_rectangle_array_buffer(bitmap);
+
+    set_uniform_matrix(context, program, camera_rad_inputs);
+    fill_buffer_data(context, &rectangle_array_buffer);
+
+    let vert_count = (rectangle_array_buffer.len() / 3) as i32;
+    crate::webgl::draw(&context, vert_count);
+}
+
+pub fn set_uniform_matrix(
     context: &WebGl2RenderingContext,
     program: &WebGlProgram,
     camera_rad_inputs: &[HtmlInputElement; 4],
@@ -196,25 +205,6 @@ fn set_uniform_matrix(
         false,
         (&rotate_x * &rotate_y * &rotate_z * &default).as_slice(),
     );
-}
-
-pub fn update_rectangle(
-    context: &WebGl2RenderingContext,
-    bitmap: &Vec<Vec<Pixel>>,
-    program: &WebGlProgram,
-    camera_rad_inputs: &[HtmlInputElement; 4],
-) {
-    if check_bitmap_is_empty(bitmap) {
-        return;
-    }
-
-    let rectangle_array_buffer = get_filled_rectangle_array_buffer(bitmap);
-
-    set_uniform_matrix(context, program, camera_rad_inputs);
-    bind_array_buffer(context, &rectangle_array_buffer);
-
-    let vert_count = (rectangle_array_buffer.len() / 3) as i32;
-    crate::webgl::draw(&context, vert_count);
 }
 
 fn make_triangle_position(
