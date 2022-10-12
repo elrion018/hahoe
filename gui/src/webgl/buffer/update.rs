@@ -89,18 +89,6 @@ fn check_bitmap_is_empty(bitmap: &Vec<Vec<Pixel>>) -> bool {
     return false;
 }
 
-pub fn fill_buffer_data(context: &WebGl2RenderingContext, array_buffer: &Vec<f32>) -> () {
-    unsafe {
-        let array_buffer_view = js_sys::Float32Array::view(&array_buffer);
-
-        context.buffer_data_with_array_buffer_view(
-            WebGl2RenderingContext::ARRAY_BUFFER,
-            &array_buffer_view,
-            WebGl2RenderingContext::STATIC_DRAW,
-        );
-    }
-}
-
 pub fn set_uniform_matrix(
     context: &WebGl2RenderingContext,
     program: &WebGlProgram,
@@ -186,36 +174,4 @@ pub fn set_uniform_matrix(
         false,
         (&rotate_x * &rotate_y * &rotate_z * &default).as_slice(),
     );
-}
-
-fn make_triangle_position(
-    x1: f32,
-    x2: f32,
-    y1: f32,
-    y2: f32,
-    h1: f32,
-    h2: f32,
-    h3: f32,
-    h4: f32,
-) -> Vec<f32> {
-    let mut vertices = Vec::<f32>::with_capacity(18);
-    vertices.push(x1);
-    vertices.push(y1);
-    vertices.push(h1);
-    vertices.push(x2);
-    vertices.push(y1);
-    vertices.push(h2);
-    vertices.push(x1);
-    vertices.push(y2);
-    vertices.push(h3);
-    vertices.push(x1);
-    vertices.push(y2);
-    vertices.push(h3);
-    vertices.push(x2);
-    vertices.push(y2);
-    vertices.push(h4);
-    vertices.push(x2);
-    vertices.push(y1);
-    vertices.push(h2);
-    vertices
 }

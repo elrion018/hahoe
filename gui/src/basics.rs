@@ -36,6 +36,7 @@ impl GuiBasics {
                 document.get_element_by_id("d_range").unwrap(),
             )),
         ];
+
         let context = canvas
             .get_context("webgl2")
             .unwrap()
