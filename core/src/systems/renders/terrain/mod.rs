@@ -54,29 +54,43 @@ impl<'a> System<'a> for RenderTerrainSystem {
                     .dyn_into::<WebGl2RenderingContext>()
                     .unwrap(),
             );
-            let program = Rc::new(get_program(&context));
+            let program = Rc::new(get_program(&Rc::clone(&context)));
             context.use_program(Some(&program));
-            let colorBufferDataMaker = ColorBufferDataMaker { context, program };
+            let colorBufferDataMaker = ColorBufferDataMaker {
+                context: Rc::clone(&context),
+                program: Rc::clone(&program),
+            };
             let colorBufferData = colorBufferDataMaker.make_buffer_data(&terrain.bitmap);
             let colorBufferDataFiller = gui::webgl::buffer::init::ColorBufferDataFiller {
-                context,
-                program,
+                context: Rc::clone(&context),
+                program: Rc::clone(&program),
                 buffer_data: Some(colorBufferData),
             };
 
             colorBufferDataFiller.bind_buffer();
             colorBufferDataFiller.fill_with_buffer_data();
 
-            let rectangleBufferDataMaker = RectangleBufferDataMaker { context, program };
+            let rectangleBufferDataMaker = RectangleBufferDataMaker {
+                context: Rc::clone(&context),
+                program: Rc::clone(&program),
+            };
             let rectangleBufferData = rectangleBufferDataMaker.make_buffer_data(&terrain.bitmap);
+            let rectangleBufferDataLength = rectangleBufferData.len();
             let rectangleBufferDataFiller = gui::webgl::buffer::init::RectangleBufferDataFiller {
-                context,
-                program,
+                context: Rc::clone(&context),
+                program: Rc::clone(&program),
                 buffer_data: Some(rectangleBufferData),
             };
 
-            gui::webgl::buffer::update::set_uniform_matrix(&context, &program, &ranges);
-            gui::webgl::draw(&context, (rectangleBufferData.len() / 3) as i32);
+            rectangleBufferDataFiller.bind_buffer();
+            rectangleBufferDataFiller.fill_with_buffer_data();
+
+            gui::webgl::buffer::update::set_uniform_matrix(
+                &Rc::clone(&context),
+                &Rc::clone(&program),
+                &ranges,
+            );
+            gui::webgl::draw(&Rc::clone(&context), (rectangleBufferDataLength / 3) as i32);
         }
     }
 }

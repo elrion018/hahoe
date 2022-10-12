@@ -46,49 +46,6 @@ pub fn get_color_buffer_data(bitmap: &Vec<Vec<Pixel>>) -> Vec<f32> {
     return color_buffer_data;
 }
 
-pub fn get_rectangle_buffer_data(bitmap: &Vec<Vec<Pixel>>) -> Vec<f32> {
-    let width = bitmap.len() - 1;
-    let height = get_head(bitmap).unwrap().len() - 1;
-
-    let width_ratio = 2. / width as f32;
-    let height_ratio = 2. / height as f32;
-
-    let start_width_ratio = -1.;
-    let start_height_ratio = -1.;
-
-    let mut rectangle_buffer_data = get_buffer_data(width, height, 24);
-
-    for x in 0..width {
-        for y in 0..height {
-            let x1 = start_width_ratio + x as f32 * width_ratio;
-            let x2 = start_width_ratio + (x + 1) as f32 * width_ratio;
-            let y1 = start_height_ratio + y as f32 * height_ratio;
-            let y2 = start_height_ratio + (y + 1) as f32 * height_ratio;
-
-            rectangle_buffer_data.append(&mut make_triangle_position(
-                x1,
-                x2,
-                y1,
-                y2,
-                bitmap[x][y].height as f32,
-                bitmap[x + 1][y].height as f32,
-                bitmap[x][y + 1].height as f32,
-                bitmap[x + 1][y + 1].height as f32,
-            ));
-        }
-    }
-
-    return rectangle_buffer_data;
-}
-
-fn check_bitmap_is_empty(bitmap: &Vec<Vec<Pixel>>) -> bool {
-    if bitmap.is_empty() || get_head(bitmap).unwrap().is_empty() {
-        return true;
-    }
-
-    return false;
-}
-
 pub fn set_uniform_matrix(
     context: &WebGl2RenderingContext,
     program: &WebGlProgram,
